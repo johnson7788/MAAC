@@ -1,32 +1,27 @@
 # Multi-Actor-Attention-Critic
-Code for [*Actor-Attention-Critic for Multi-Agent Reinforcement Learning*](https://arxiv.org/abs/1810.02912) (Iqbal and Sha, ICML 2019)
 
-## Requirements
-* Python 3.6.1 (Minimum)
-* [OpenAI baselines](https://github.com/openai/baselines), commit hash: 98257ef8c9bd23a24a330731ae54ed086d9ce4a7
-* My [fork](https://github.com/shariqiqbal2810/multiagent-particle-envs) of Multi-agent Particle Environments
-* [PyTorch](http://pytorch.org/), version: 0.3.0.post4
-* [OpenAI Gym](https://github.com/openai/gym), version: 0.9.4
-* [Tensorboard](https://github.com/tensorflow/tensorboard), version: 0.4.0rc3 and [Tensorboard-Pytorch](https://github.com/lanpa/tensorboard-pytorch), version: 1.0 (for logging)
+![Example](rewardfuncs/lenshipyards/example.gif)
 
-The versions are just what I used and not necessarily strict requirements.
+This repository was intended to be my submission for Two Sigma's 2020 Halite competition, a game in which you must control multiple unit types and make intelligent decisions in order to accumulate the maximum amount of halite by the end of the game.  I elected to try a reinforcement learning based approach, but wanted to try something which was multi-agent via a decentralized policy and a centralized critic (since Halite does provide perfect information, whereas games such as Battlecode do not).  
 
-## How to Run
+## Please Note!
 
-All training code is contained within `main.py`. To view options simply run:
+The vast majority of the work done here was completed as part of [this project by Shariq Iqbal et al.](https://github.com/shariqiqbal2810/MAAC), who came up with the entire algorithm, and was kind enough to open-source the code behind it.  I've made a couple modifications in order to make this algorithm work with a more complex game such as Halite, but the power of their algorithm work is explained here as part of their paper: [*Actor-Attention-Critic for Multi-Agent Reinforcement Learning*](https://arxiv.org/abs/1810.02912) (Iqbal and Sha, ICML 2019).  
 
-```shell
-python main.py --help
+## Modifications
+
+- Adding/removing agents dynamically over the course of a game:
+  - In Halite, ships can be destroyed, convert into shipyards, or be spawned from shipyards, so the total number of ships on the board is unpredictable.  
+- One network per agent type:
+  - Rather than creating a new encoder network for each additional agent of type "ship", for example, we can simply create a ship network which is team-agnostic, and train only that network with all of the data we accumulate for ship handling from all teams.  
+
+To resolve these issues, I've restructured the training process somewhat so that the total number of policy and critic networks reflects the number of agent types, rather than the number of agents on the board (q losses and policy losses are simply summed).  The replay buffer has also been restructured to handle the fact that an unknown number of agents will exist at every timeframe.  
+
+Test scenarios are available in `envs/test_scenarios` to validate different types of agent functionality.  
+
+## Citations
+
 ```
-The "Cooperative Treasure Collection" environment from our paper is referred to as `fullobs_collect_treasure` in this repo, and "Rover-Tower" is referred to as `multi_speaker_listener`.
-
-In order to match our experiments, the maximum episode length should be set to 100 for Cooperative Treasure Collection and 25 for Rover-Tower.
-
-## Citing our work
-
-If you use this repo in your work, please consider citing the corresponding paper:
-
-```bibtex
 @InProceedings{pmlr-v97-iqbal19a,
   title =    {Actor-Attention-Critic for Multi-Agent Reinforcement Learning},
   author =   {Iqbal, Shariq and Sha, Fei},

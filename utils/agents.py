@@ -26,7 +26,7 @@ class AttentionAgent(object):
         hard_update(self.target_policy, self.policy)
         self.policy_optimizer = Adam(self.policy.parameters(), lr=lr)
 
-    def step(self, obs, explore=False):
+    def step(self, obs: Variable, explore=False):
         """
         Take a step forward in environment for a minibatch of observations
         Inputs:

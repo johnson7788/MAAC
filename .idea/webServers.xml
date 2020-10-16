@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="WebServers">
+    <option name="servers">
+      <webServer id="abf97cf5-8b75-42a5-b168-9821eee98b17" name="threadrig" url="http://10.0.0.9">
+        <fileTransfer rootFolder="/home/makiah" accessType="SFTP" host="10.0.0.9" port="22" sshConfigId="5a4954ee-2565-42a1-8c6d-a5954f399dcd" sshConfig="makiah@10.0.0.9:22 password">
+          <advancedOptions>
+            <advancedOptions dataProtectionLevel="Private" passiveMode="true" shareSSLContext="true" />
+          </advancedOptions>
+        </fileTransfer>
+      </webServer>
+    </option>
+  </component>
+</project>

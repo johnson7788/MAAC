@@ -1,96 +1,67 @@
 import numpy as np
-from torch import Tensor
-from torch.autograd import Variable
+from typing import List, Tuple, Dict
+from utils.iterablehelper import zip_equal
+import random
+from utils.core import *
+
+
+class RewardStats:
+    def __init__(self, mean: float, std: float):
+        self.mean = mean
+        self.std = std
+
 
 class ReplayBuffer(object):
     """
-    Replay Buffer for multi-agent RL with parallel rollouts
+    Replay Buffer for multi-agent RL with parallel threading
     """
-    def __init__(self, max_steps, num_agents, obs_dims, ac_dims):
+    def __init__(self, max_steps: int):
         """
         Inputs:
-            max_steps (int): Maximum number of timepoints to store in buffer
-            num_agents (int): Number of agents in environment
-            obs_dims (list of ints): number of obervation dimensions for each
-                                     agent
-            ac_dims (list of ints): number of action dimensions for each agent
+            agent_type_topologies (List[Tuple[int, int]): ex. [(5, 2), (5, 3)]
+
+        Data is stored by data[agent_type] = List[FinalizedFrame]
+        where tuple is observation, action, reward, done, next observation
         """
         self.max_steps = max_steps
-        self.num_agents = num_agents
-        self.obs_buffs = []
-        self.ac_buffs = []
-        self.rew_buffs = []
-        self.next_obs_buffs = []
-        self.done_buffs = []
-        for odim, adim in zip(obs_dims, ac_dims):
-            self.obs_buffs.append(np.zeros((max_steps, odim), dtype=np.float32))
-            self.ac_buffs.append(np.zeros((max_steps, adim), dtype=np.float32))
-            self.rew_buffs.append(np.zeros(max_steps, dtype=np.float32))
-            self.next_obs_buffs.append(np.zeros((max_steps, odim), dtype=np.float32))
-            self.done_buffs.append(np.zeros(max_steps, dtype=np.uint8))
 
+        # actually wait why pad it when we can just use a dict?  then we can sample directly and immediately preprocess
+        self.data: List[Dict[AgentKey, AgentReplayFrame]] = []
 
-        self.filled_i = 0  # index of first empty location in buffer (last index when full)
-        self.curr_i = 0  # current index to write to (ovewrite oldest data)
+    def push(self, new_data: Dict[AgentKey, AgentReplayFrame]):
+        self.data.append(new_data)
+        if len(self.data) > self.max_steps:
+            self.data = self.data[1:]
 
-    def __len__(self):
-        return self.filled_i
-
-    def push(self, observations, actions, rewards, next_observations, dones):
-        nentries = observations.shape[0]  # handle multiple parallel environments
-        if self.curr_i + nentries > self.max_steps:
-            rollover = self.max_steps - self.curr_i # num of indices to roll over
-            for agent_i in range(self.num_agents):
-                self.obs_buffs[agent_i] = np.roll(self.obs_buffs[agent_i],
-                                                  rollover, axis=0)
-                self.ac_buffs[agent_i] = np.roll(self.ac_buffs[agent_i],
-                                                 rollover, axis=0)
-                self.rew_buffs[agent_i] = np.roll(self.rew_buffs[agent_i],
-                                                  rollover)
-                self.next_obs_buffs[agent_i] = np.roll(
-                    self.next_obs_buffs[agent_i], rollover, axis=0)
-                self.done_buffs[agent_i] = np.roll(self.done_buffs[agent_i],
-                                                   rollover)
-            self.curr_i = 0
-            self.filled_i = self.max_steps
-        for agent_i in range(self.num_agents):
-            self.obs_buffs[agent_i][self.curr_i:self.curr_i + nentries] = np.vstack(
-                observations[:, agent_i])
-            # actions are already batched by agent, so they are indexed differently
-            self.ac_buffs[agent_i][self.curr_i:self.curr_i + nentries] = actions[agent_i]
-            self.rew_buffs[agent_i][self.curr_i:self.curr_i + nentries] = rewards[:, agent_i]
-            self.next_obs_buffs[agent_i][self.curr_i:self.curr_i + nentries] = np.vstack(
-                next_observations[:, agent_i])
-            self.done_buffs[agent_i][self.curr_i:self.curr_i + nentries] = dones[:, agent_i]
-        self.curr_i += nentries
-        if self.filled_i < self.max_steps:
-            self.filled_i += nentries
-        if self.curr_i == self.max_steps:
-            self.curr_i = 0
-
-    def sample(self, N, to_gpu=False, norm_rews=True):
-        inds = np.random.choice(np.arange(self.filled_i), size=N,
-                                replace=True)
-        if to_gpu:
-            cast = lambda x: Variable(Tensor(x), requires_grad=False).cuda()
-        else:
-            cast = lambda x: Variable(Tensor(x), requires_grad=False)
+    def sample(self, N: int, norm_rews=True) -> List[Dict[AgentKey, AgentReplayFrame]]:
+        # print("Sampling from buffer length: ", len(self.data))
+        # print("len of buffer is", len(self.data))
+        sample = random.sample(self.data, min(N, len(self.data)))
         if norm_rews:
-            ret_rews = [cast((self.rew_buffs[i][inds] -
-                              self.rew_buffs[i][:self.filled_i].mean()) /
-                             self.rew_buffs[i][:self.filled_i].std())
-                        for i in range(self.num_agents)]
+            sample_norm = []
+            key_superset = set(key for sample_row in sample for key in sample_row.keys())
+            reward_stats_dict = {k: self.get_reward_stats(k) for k in key_superset}
+            for data_row in sample:
+                data_row_new = {}
+                for k, v in data_row.items():
+                    stats = reward_stats_dict[k]
+                    data_row_new[k] = AgentReplayFrame(v.obs, v.action, (v.reward - stats.mean) / (stats.std + 1.), v.done, v.next_obs)
+                sample_norm.append(data_row_new)
+            return sample_norm
         else:
-            ret_rews = [cast(self.rew_buffs[i][inds]) for i in range(self.num_agents)]
-        return ([cast(self.obs_buffs[i][inds]) for i in range(self.num_agents)],
-                [cast(self.ac_buffs[i][inds]) for i in range(self.num_agents)],
-                ret_rews,
-                [cast(self.next_obs_buffs[i][inds]) for i in range(self.num_agents)],
-                [cast(self.done_buffs[i][inds]) for i in range(self.num_agents)])
+            return sample
 
-    def get_average_rewards(self, N):
-        if self.filled_i == self.max_steps:
-            inds = np.arange(self.curr_i - N, self.curr_i)  # allow for negative indexing
-        else:
-            inds = np.arange(max(0, self.curr_i - N), self.curr_i)
-        return [self.rew_buffs[i][inds].mean() for i in range(self.num_agents)]
+    def get_reward_stats(self, key: AgentKey) -> RewardStats:
+        reward_vals = np.array([row[key].reward for row in self.data if key in row])
+        return RewardStats(reward_vals.mean(), reward_vals.std())
+
+    def length(self):
+        return len(self.data)
+
+    def get_average_rewards(self, N) -> Dict[AgentKey, float]:
+        start = max(0, len(self.data) - N)
+        key_superset = set(key for row in self.data[start:] for key in row.keys())
+        stats: Dict[AgentKey, float] = \
+            {key: np.array([row[key].reward for row in self.data[start:] if key in row]).mean()
+             for key in key_superset}
+        return stats

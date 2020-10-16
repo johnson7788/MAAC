@@ -18,6 +18,8 @@ class BasePolicy(nn.Module):
         """
         super(BasePolicy, self).__init__()
 
+        self.input_dim = input_dim
+
         if norm_in:  # normalize inputs
             self.in_fn = nn.BatchNorm1d(input_dim, affine=False)
         else:
@@ -61,7 +63,7 @@ class DiscretePolicy(BasePolicy):
         probs = F.softmax(out, dim=1)
         on_gpu = next(self.parameters()).is_cuda
         if sample:
-            int_act, act = categorical_sample(probs, use_cuda=on_gpu)
+            int_act, act = categorical_sample(probs, use_cuda=on_gpu) # if you set this to true, run it, let it fail, and then set it back to on_gpu it lets training on gpu work again
         else:
             act = onehot_from_logits(probs)
         rets = [act]
