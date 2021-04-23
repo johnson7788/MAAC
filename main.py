@@ -115,24 +115,22 @@ def run(config):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument("env_id", help="Name of environment")
-    parser.add_argument("model_name",
-                        help="Name of directory to store " +
-                             "model/training contents")
+    parser.add_argument("--env_id", help="环境的名称",choices=('fullobs_collect_treasure','multi_speaker_listener'), default='fullobs_collect_treasure')
+    parser.add_argument("--model_name",help="存储模型/训练内容的目录名称", default='output')
     parser.add_argument("--n_rollout_threads", default=12, type=int)
     parser.add_argument("--buffer_length", default=int(1e6), type=int)
     parser.add_argument("--n_episodes", default=50000, type=int)
     parser.add_argument("--episode_length", default=25, type=int)
     parser.add_argument("--steps_per_update", default=100, type=int)
     parser.add_argument("--num_updates", default=4, type=int,
-                        help="Number of updates per update cycle")
+                        help="每个更新周期的更新数")
     parser.add_argument("--batch_size",
                         default=1024, type=int,
                         help="Batch size for training")
     parser.add_argument("--save_interval", default=1000, type=int)
-    parser.add_argument("--pol_hidden_dim", default=128, type=int)
-    parser.add_argument("--critic_hidden_dim", default=128, type=int)
-    parser.add_argument("--attend_heads", default=4, type=int)
+    parser.add_argument("--pol_hidden_dim", default=128, type=int, help='policy网络神经元的隐藏神经元数')
+    parser.add_argument("--critic_hidden_dim", default=128, type=int, help='Critic网络神经元的隐藏神经元数')
+    parser.add_argument("--attend_heads", default=4, type=int, help='critic的注意力的头数')
     parser.add_argument("--pi_lr", default=0.001, type=float)
     parser.add_argument("--q_lr", default=0.001, type=float)
     parser.add_argument("--tau", default=0.001, type=float)
@@ -141,5 +139,5 @@ if __name__ == '__main__':
     parser.add_argument("--use_gpu", action='store_true')
 
     config = parser.parse_args()
-
+    #主函数
     run(config)
