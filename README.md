@@ -2,22 +2,26 @@
 
 ![Example](rewardfuncs/lenshipyards/example.gif)
 
-This repository was intended to be my submission for Two Sigma's 2020 Halite competition, a game in which you must control multiple unit types and make intelligent decisions in order to accumulate the maximum amount of halite by the end of the game.  I elected to try a reinforcement learning based approach, but wanted to try something which was multi-agent via a decentralized policy and a centralized critic (since Halite does provide perfect information, whereas games such as Battlecode do not).  
+这个资源库是我为Two Sigma的2020年Halite竞赛提交的，在这个游戏中，你必须控制多种类型的单元并做出智能决定，以便在游戏结束时积累最大数量的Halite。 
+我选择了一个基于强化学习的方法，但我想通过一个分散的策略和一个集中的critic来尝试一些多agent的方法（因为Halite确实提供了完美的信息，而Battlecode等游戏则没有）。
 
 ## Please Note!
 
-The vast majority of the work done here was completed as part of [this project by Shariq Iqbal et al.](https://github.com/shariqiqbal2810/MAAC), who came up with the entire algorithm, and was kind enough to open-source the code behind it.  I've made a couple modifications in order to make this algorithm work with a more complex game such as Halite, but the power of their algorithm work is explained here as part of their paper: [*Actor-Attention-Critic for Multi-Agent Reinforcement Learning*](https://arxiv.org/abs/1810.02912) (Iqbal and Sha, ICML 2019).  
+这里所做的绝大部分工作是作为[Shariq Iqbal等人的这个项目]的一部分完成的（https://github.com/shariqiqbal2810/MAAC）。
+他提出了整个算法，并很好地将其背后的代码开源了。 我做了一些修改，以便使这个算法适用于更复杂的游戏，如Halite，
+他们的算法在这里解释为他们论文的一部分。[*Actor-Attention-Critic for Multi-Agent Reinforcement Learning*]（https://arxiv.org/abs/1810.02912）（Iqbal and Sha，ICML 2019）。
 
 ## Modifications
 
-- Adding/removing agents dynamically over the course of a game:
-  - In Halite, ships can be destroyed, convert into shipyards, or be spawned from shipyards, so the total number of ships on the board is unpredictable.  
-- One network per agent type:
-  - Rather than creating a new encoder network for each additional agent of type "ship", for example, we can simply create a ship network which is team-agnostic, and train only that network with all of the data we accumulate for ship handling from all teams.  
+- 在游戏过程中动态地添加/删除agent。
+  - 在Halite中，船只可以被摧毁，转化为船坞，或从船坞中产生，所以棋盘上的船只总数是不可预测的。 
+- 每个agent类型有一个网络。
+  - 例如，我们可以简单地创建一个与团队无关的船舶网络，只用我们积累的所有团队的船舶处理数据来训练该网络，而不是为每个额外的 "船舶 "类型的agent创建一个新的编码器网络。
 
-To resolve these issues, I've restructured the training process somewhat so that the total number of policy and critic networks reflects the number of agent types, rather than the number of agents on the board (q losses and policy losses are simply summed).  The replay buffer has also been restructured to handle the fact that an unknown number of agents will exist at every timeframe.  
+为了解决这些问题，我对训练进程进行了一定程度的重组，使策略和critic网络的总数反映了agent类型的数量，
+而不是棋盘上agent的数量（q损失和策略损失简单相加）。 重放缓冲区也进行了重组，以处理每个时间段都存在未知数量的agent的事实。
 
-Test scenarios are available in `envs/test_scenarios` to validate different types of agent functionality.  
+测试方案在`envs/test_scenarios`中可用，以验证不同类型的agent特征。
 
 ## Citations
 
