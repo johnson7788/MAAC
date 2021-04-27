@@ -8,7 +8,11 @@ Code for [*Actor-Attention-Critic for Multi-Agent Reinforcement Learning*](https
 * My [fork](https://github.com/shariqiqbal2810/multiagent-particle-envs) of Multi-agent Particle Environments
 * [PyTorch](http://pytorch.org/), version: 0.3.0.post4
 * [OpenAI Gym](https://github.com/openai/gym), version: 0.9.4
-* [Tensorboard](https://github.com/tensorflow/tensorboard), version: 0.4.0rc3 and [Tensorboard-Pytorch](https://github.com/lanpa/tensorboard-pytorch), version: 1.0 (for logging)
+* [Tensorboard](https://github.com/tensorflow/tensorboard), version: 0.4.0rc3 and 
+* [Tensorboard-Pytorch](https://github.com/lanpa/tensorboard-pytorch), version: 1.0 (for logging)
+
+https://github.com/johnson7788/baselines
+https://github.com/johnson7788/multiagent-particle-envs
 
 ## How to Run
 

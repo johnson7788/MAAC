@@ -27,20 +27,21 @@ def make_parallel_env(env_id, n_rollout_threads, seed):
 
 def run(config):
     model_dir = Path('./models') / config.env_id / config.model_name
-    if not model_dir.exists():
-        run_num = 1
-    else:
-        exst_run_nums = [int(str(folder.name).split('run')[1]) for folder in
-                         model_dir.iterdir() if
-                         str(folder.name).startswith('run')]
-        if len(exst_run_nums) == 0:
-            run_num = 1
-        else:
-            run_num = max(exst_run_nums) + 1
+    # if not model_dir.exists():
+    #     run_num = 1
+    # else:
+    #     exst_run_nums = [int(str(folder.name).split('run')[1]) for folder in
+    #                      model_dir.iterdir() if
+    #                      str(folder.name).startswith('run')]
+    #     if len(exst_run_nums) == 0:
+    #         run_num = 1
+    #     else:
+    #         run_num = max(exst_run_nums) + 1
+    run_num = 1
     curr_run = 'run%i' % run_num
     run_dir = model_dir / curr_run
     log_dir = run_dir / 'logs'
-    os.makedirs(log_dir)
+    os.makedirs(log_dir,exist_ok=True)
     logger = SummaryWriter(str(log_dir))
 
     torch.manual_seed(run_num)
@@ -117,7 +118,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("--env_id", help="环境的名称",choices=('fullobs_collect_treasure','multi_speaker_listener'), default='fullobs_collect_treasure')
     parser.add_argument("--model_name",help="存储模型/训练内容的目录名称", default='output')
-    parser.add_argument("--n_rollout_threads", default=12, type=int)
+    parser.add_argument("--n_rollout_threads", default=1, type=int, help="同时启动环境的线程数，启动多少个环境")
     parser.add_argument("--buffer_length", default=int(1e6), type=int)
     parser.add_argument("--n_episodes", default=50000, type=int)
     parser.add_argument("--episode_length", default=25, type=int)
